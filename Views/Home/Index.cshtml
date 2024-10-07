@@ -1,0 +1,20 @@
+﻿@model smallurl.Models.UrlMapping
+@{
+    ViewData["Title"] = "Home Page";
+}
+<h1>URL Shortener</h1>
+
+<form asp-action="Shorten" method="post">
+    <div class="form-group">
+        <label for="url">Enter URL to shorten:</label>
+        <input type="text" class="form-control" id="url" name="url" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Shorten</button>
+</form>
+
+@if (ViewBag.ShortUrl != null)
+{
+    <div class="alert alert-success mt-3">
+        Shortened URL: <a href="@ViewBag.ShortUrl">@ViewBag.ShortUrl</a>
+    </div>
+}
