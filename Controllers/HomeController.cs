@@ -49,7 +49,7 @@ namespace smallurl.Controllers
         }
 
         [HttpGet("{shortCode}")]
-        public async Task<IActionResult> Redirect(string shortCode)
+        public async Task<IActionResult> RedirectToUrl(string shortCode)
         {
             if (string.IsNullOrEmpty(shortCode))
             {
@@ -80,6 +80,71 @@ namespace smallurl.Controllers
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult Secret()
+        {
+            return View(new SecretPageModel());
+        }
+
+        [HttpPost]
+        public IActionResult Secret(SecretPageModel model)
+        {
+            const string ContributorId = "?wt.mc_id=studentamb_425455" ;
+           
+            if (!string.IsNullOrEmpty(model.MsLink))
+            {
+                if (CheckUrl(model.MsLink))
+                {
+                    if (model.MsLink.Contains("wt.mc_id=studentamb"))
+                    {
+                        model.AppendedLink = $"{model.MsLink}";
+                    }
+                    else
+                    {
+                        model.AppendedLink = $"{model.MsLink}{ContributorId}";
+                    }
+                }
+                else
+                {
+                   model.ErrorMessage = "The provided URL is not valid.";
+                    return View(model);
+                }
+            }
+            return View(model);
+        }
+
+        private bool CheckUrl(string url)
+        {
+            List<string> domains = new()
+            {
+                "azure.microsoft.com",
+                "imaginecup.microsoft.com",
+                "blog.fabric.microsoft.com",
+                "learn.microsoft.com",
+                "code.visualstudio.com",
+                "learn.microsoft.com/copilot",
+                "community.fabric.microsoft.com",
+                "microsoft.com/microsoft-cloud/blog",
+                "microsoft.com/microsoft-fabric",
+                "developer.microsoft.com",
+                "microsoft.com/startups",
+                "dotnet.microsoft.com",
+                "events.microsoft.com",
+                "foundershub.startups.microsoft.com",
+                "techcommunity.microsoft.com",
+                "mvp.microsoft.com",
+                "reactor.microsoft.com"
+            };
+            foreach (var domain in domains)
+            {
+                if (url.Contains(domain))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
