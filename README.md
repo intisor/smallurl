@@ -585,7 +585,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 - LinkedIn: [intitech07](https://www.linkedin.com/in/intitech07/)
 - GitHub: [@intisor](https://github.com/intisor)
 
-Microsoft Learn Student Ambassador - Contributor ID: studentamb_425455
+Microsoft Learn Student Ambassador 
 
 ---
 
