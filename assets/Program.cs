@@ -6,8 +6,8 @@ using smallurl.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
         ?? "Data Source=smallurl.db"));
 
 builder.Services.AddSingleton<IHashids>(_ =>
@@ -37,7 +37,7 @@ app.UseHttpsRedirection();
 // ── Ensure DB exists
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
 }
 
@@ -45,6 +45,7 @@ using (var scope = app.Services.CreateScope())
 // PUBLIC ENDPOINTS
 // ────────────────────────────────────────────
 
+// Root — health check
 app.MapGet("/", () => Results.Ok(new
 {
     service = "i.intitech.dev",
@@ -52,11 +53,13 @@ app.MapGet("/", () => Results.Ok(new
     timestamp = DateTime.UtcNow
 }));
 
-app.MapGet("/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids) =>
+// Redirect
+app.MapGet("/{slug}", async (string slug, AppDbContext db, IHashids hashids) =>
 {
     if (string.IsNullOrWhiteSpace(slug))
         return Results.NotFound();
 
+    // Decode slug → ID
     var ids = hashids.Decode(slug);
     if (ids.Length == 0)
         return Results.NotFound();
@@ -65,6 +68,7 @@ app.MapGet("/{slug}", async (string slug, ApplicationDbContext db, IHashids hash
     if (link is null)
         return Results.NotFound();
 
+    // Track click (fire and forget)
     db.Clicks.Add(new Click
     {
         LinkId = link.Id,
@@ -75,7 +79,8 @@ app.MapGet("/{slug}", async (string slug, ApplicationDbContext db, IHashids hash
     return Results.Redirect(link.OriginalUrl, permanent: true);
 });
 
-app.MapGet("/api/stats/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids) =>
+// Stats — public, so you can show them on portfolio
+app.MapGet("/api/stats/{slug}", async (string slug, AppDbContext db, IHashids hashids) =>
 {
     var ids = hashids.Decode(slug);
     if (ids.Length == 0)
@@ -99,7 +104,8 @@ app.MapGet("/api/stats/{slug}", async (string slug, ApplicationDbContext db, IHa
     });
 });
 
-app.MapGet("/api/stats", async (ApplicationDbContext db, IHashids hashids) =>
+// All links stats — public dashboard data
+app.MapGet("/api/stats", async (AppDbContext db, IHashids hashids) =>
 {
     var links = await db.Links
         .Include(l => l.Clicks)
@@ -120,17 +126,21 @@ app.MapGet("/api/stats", async (ApplicationDbContext db, IHashids hashids) =>
 // PROTECTED ENDPOINTS (API Key)
 // ────────────────────────────────────────────
 
-var apiKey = builder.Configuration["ApiKey"]
+var apiKey = builder.Configuration["ApiKey"] 
     ?? throw new InvalidOperationException("ApiKey not configured");
 
-app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext db, IHashids hashids, HttpContext ctx) =>
+// Shorten a URL
+app.MapPost("/api/shorten", async (ShortenRequest request, AppDbContext db, IHashids hashids, HttpContext ctx) =>
 {
+    // Auth
     if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
         return Results.Unauthorized();
 
+    // Validate
     if (!Uri.TryCreate(request.Url, UriKind.Absolute, out _))
         return Results.BadRequest(new { error = "Invalid URL" });
 
+    // Custom slug check
     if (!string.IsNullOrWhiteSpace(request.CustomSlug))
     {
         var exists = await db.Links.AnyAsync(l => l.CustomSlug == request.CustomSlug);
@@ -149,6 +159,7 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
     db.Links.Add(link);
     await db.SaveChangesAsync();
 
+    // Derive slug from ID (no second save needed)
     var slug = string.IsNullOrWhiteSpace(request.CustomSlug)
         ? hashids.Encode(link.Id)
         : request.CustomSlug;
@@ -156,14 +167,15 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
     return Results.Created($"/{slug}", new
     {
         slug,
-        shortUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}/{slug}",
+        shortUrl = $"https://i.intitech.dev/{slug}",
         originalUrl = link.OriginalUrl,
         label = link.Label,
         createdAt = link.CreatedAt
     });
 });
 
-app.MapDelete("/api/links/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids, HttpContext ctx) =>
+// Delete a link
+app.MapDelete("/api/links/{slug}", async (string slug, AppDbContext db, IHashids hashids, HttpContext ctx) =>
 {
     if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
         return Results.Unauthorized();
@@ -182,4 +194,5 @@ app.MapDelete("/api/links/{slug}", async (string slug, ApplicationDbContext db, 
 
 app.Run();
 
+// ── Request DTOs
 record ShortenRequest(string Url, string? Label, string? CustomSlug);

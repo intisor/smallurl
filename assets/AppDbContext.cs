@@ -1,18 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using smallurl.Models;
 
 namespace smallurl.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class AppDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Link> Links => Set<Link>();
         public DbSet<Click> Clicks => Set<Click>();
-        public DbSet<UrlMapping> UrlMappings => Set<UrlMapping>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -21,7 +17,7 @@ namespace smallurl.Data
                 e.HasKey(l => l.Id);
                 e.Property(l => l.Id).ValueGeneratedOnAdd();
                 e.Property(l => l.OriginalUrl).IsRequired();
-                e.HasIndex(l => l.CustomSlug).IsUnique();
+                e.HasIndex(l => l.CustomSlug).IsUnique().HasFilter("[CustomSlug] IS NOT NULL");
                 e.HasMany(l => l.Clicks)
                     .WithOne(c => c.Link)
                     .HasForeignKey(c => c.LinkId)
@@ -32,13 +28,6 @@ namespace smallurl.Data
             {
                 e.HasKey(c => c.Id);
                 e.Property(c => c.Id).ValueGeneratedOnAdd();
-            });
-
-            modelBuilder.Entity<UrlMapping>(e =>
-            {
-                e.HasKey(u => u.Id);
-                e.Property(u => u.Id).ValueGeneratedOnAdd();
-                e.Property(u => u.OriginalUrl).IsRequired();
             });
         }
     }
