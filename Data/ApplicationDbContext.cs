@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
+using System.Threading;
 using smallurl.Models;
 
 namespace smallurl.Data
@@ -40,6 +42,55 @@ namespace smallurl.Data
                 e.Property(u => u.Id).ValueGeneratedOnAdd();
                 e.Property(u => u.OriginalUrl).IsRequired();
             });
+        }
+
+        // Basic retry for transient SQLITE_BUSY errors. Keeps transactions short and retries with backoff.
+        public override int SaveChanges()
+        {
+            return SaveChangesWithRetry(() => base.SaveChanges());
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return SaveChangesWithRetryAsync(() => base.SaveChangesAsync(cancellationToken));
+        }
+
+        private int SaveChangesWithRetry(Func<int> saveFunc)
+        {
+            const int maxRetries = 5;
+            var delay = 100;
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    return saveFunc();
+                }
+                catch (SqliteException ex) when (ex.SqliteErrorCode == 5) // SQLITE_BUSY
+                {
+                    if (attempt >= maxRetries) throw;
+                    Thread.Sleep(delay);
+                    delay *= 2;
+                }
+            }
+        }
+
+        private async Task<int> SaveChangesWithRetryAsync(Func<Task<int>> saveFunc)
+        {
+            const int maxRetries = 5;
+            var delay = 100;
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    return await saveFunc();
+                }
+                catch (SqliteException ex) when (ex.SqliteErrorCode == 5) // SQLITE_BUSY
+                {
+                    if (attempt >= maxRetries) throw;
+                    await Task.Delay(delay);
+                    delay *= 2;
+                }
+            }
         }
     }
 }

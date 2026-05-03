@@ -6,7 +6,8 @@ using smallurl.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// Use DbContext pooling to reduce allocation overhead under load
+builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=smallurl.db"));
 
@@ -38,6 +39,28 @@ app.UseHttpsRedirection();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Ensure PRAGMA settings for production-readiness on the SQLite connection
+    var conn = db.Database.GetDbConnection();
+    try
+    {
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        // Enable WAL for better concurrency
+        cmd.CommandText = "PRAGMA journal_mode = WAL;";
+        cmd.ExecuteNonQuery();
+        // Tune synchronous for balanced durability/performance
+        cmd.CommandText = "PRAGMA synchronous = NORMAL;";
+        cmd.ExecuteNonQuery();
+        // Enforce foreign key constraints
+        cmd.CommandText = "PRAGMA foreign_keys = ON;";
+        cmd.ExecuteNonQuery();
+    }
+    finally
+    {
+        try { conn.Close(); } catch { }
+    }
+
     db.Database.EnsureCreated();
 }
 
