@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Use DbContext pooling to reduce allocation overhead under load
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=smallurl.db"));
+        ?? "Data Source=/home/data/smallurl.db"));
 
 builder.Services.AddSingleton<IHashids>(_ =>
     new Hashids(
