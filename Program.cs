@@ -2,6 +2,7 @@ using HashidsNet;
 using Microsoft.EntityFrameworkCore;
 using smallurl.Data;
 using smallurl.Models;
+using smallurl.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,8 @@ builder.Services.AddSingleton<IHashids>(_ =>
             ?? throw new InvalidOperationException("Hashids:Salt not configured"),
         minHashLength: 5
     ));
+
+builder.Services.AddScoped<LinkProcessorService>();
 
 builder.Services.AddCors(options =>
 {
@@ -190,6 +193,37 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
     });
 });
 
+app.MapPost("/api/process-blog", async (ProcessBlogRequest request, LinkProcessorService processor, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    if (string.IsNullOrWhiteSpace(request.Content))
+        return Results.BadRequest(new { error = "Content is required" });
+
+    var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+    
+    // 1. Process all links within the blog content
+    var processedContent = await processor.ProcessBlogContentAsync(request.Content, baseUrl);
+
+    // 2. Generate a master short link for the blog post itself if provided
+    string? blogShortUrl = null;
+    string? blogSlug = null;
+    if (!string.IsNullOrWhiteSpace(request.BlogUrl))
+    {
+        blogSlug = await processor.GetOrCreateShortCodeAsync(request.BlogUrl);
+        blogShortUrl = $"{baseUrl}/{blogSlug}";
+    }
+
+    return Results.Ok(new
+    {
+        processedContent,
+        blogShortUrl,
+        blogSlug,
+        timestamp = DateTime.UtcNow
+    });
+});
+
 app.MapDelete("/api/links/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids, HttpContext ctx) =>
 {
     if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
@@ -210,3 +244,4 @@ app.MapDelete("/api/links/{slug}", async (string slug, ApplicationDbContext db, 
 app.Run();
 
 record ShortenRequest(string Url, string? Label, string? CustomSlug);
+record ProcessBlogRequest(string Content, string? BlogUrl);
