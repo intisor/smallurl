@@ -6,6 +6,13 @@ using smallurl.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services
+
+
+// Ensure persistent SQLite directory exists (Azure App Service)
+var dbDir = "/home/data";
+if (!Directory.Exists(dbDir))
+    Directory.CreateDirectory(dbDir);
+    
 // Use DbContext pooling to reduce allocation overhead under load
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
