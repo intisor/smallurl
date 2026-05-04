@@ -5,22 +5,20 @@ using smallurl.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Services
-
-
-// Ensure persistent SQLite directory exists (Azure App Service)
+// ── Ensure persistent directory exists BEFORE any DB operations
 var dbDir = "/home/data";
 if (!Directory.Exists(dbDir))
     Directory.CreateDirectory(dbDir);
-    
-// Use DbContext pooling to reduce allocation overhead under load
+
+// ── Services
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=/home/data/smallurl.db"));
 
 builder.Services.AddSingleton<IHashids>(_ =>
     new Hashids(
-        builder.Configuration["Hashids:Salt"] ?? throw new InvalidOperationException("Hashids:Salt not configured"),
+        builder.Configuration["Hashids:Salt"] 
+            ?? throw new InvalidOperationException("Hashids:Salt not configured"),
         minHashLength: 5
     ));
 
@@ -42,24 +40,24 @@ var app = builder.Build();
 app.UseCors("Portfolio");
 app.UseHttpsRedirection();
 
-// ── Ensure DB exists
+// ── DB init
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+    // Create tables if they don't exist
+    db.Database.EnsureCreated();
 
-    // Ensure PRAGMA settings for production-readiness on the SQLite connection
+    // Set SQLite PRAGMAs on the now-existing database file
     var conn = db.Database.GetDbConnection();
     try
     {
         conn.Open();
         using var cmd = conn.CreateCommand();
-        // Enable WAL for better concurrency
         cmd.CommandText = "PRAGMA journal_mode = WAL;";
         cmd.ExecuteNonQuery();
-        // Tune synchronous for balanced durability/performance
         cmd.CommandText = "PRAGMA synchronous = NORMAL;";
         cmd.ExecuteNonQuery();
-        // Enforce foreign key constraints
         cmd.CommandText = "PRAGMA foreign_keys = ON;";
         cmd.ExecuteNonQuery();
     }
@@ -67,9 +65,8 @@ using (var scope = app.Services.CreateScope())
     {
         try { conn.Close(); } catch { }
     }
-
-    db.Database.EnsureCreated();
 }
+
 
 // ────────────────────────────────────────────
 // PUBLIC ENDPOINTS
