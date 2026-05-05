@@ -24,6 +24,8 @@ builder.Services.AddSingleton<IHashids>(_ =>
     ));
 
 builder.Services.AddScoped<LinkProcessorService>();
+builder.Services.AddScoped<OgImageService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
 {
@@ -103,6 +105,37 @@ app.MapGet("/{slug}", async (string slug, ApplicationDbContext db, IHashids hash
     await db.SaveChangesAsync();
 
     return Results.Redirect(link.OriginalUrl, permanent: true);
+});
+
+app.MapGet("/og/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids, OgImageService ogService) =>
+{
+    if (string.IsNullOrWhiteSpace(slug))
+        return Results.NotFound();
+
+    var ids = hashids.Decode(slug);
+    if (ids.Length == 0)
+        return Results.NotFound();
+
+    var link = await db.Links.FirstOrDefaultAsync(l => l.Id == ids[0]);
+    if (link is null)
+        return Results.NotFound();
+
+    string title, date;
+    
+    if (link.OriginalUrl.Contains("blogs.intitech.dev/posts/"))
+    {
+        var meta = await ogService.GetMetadataFromUrlAsync(link.OriginalUrl);
+        title = meta.Title;
+        date = meta.Date;
+    }
+    else
+    {
+        title = link.Label;
+        date = link.CreatedAt.ToString("MMM dd, yyyy");
+    }
+
+    var imageBytes = await ogService.GenerateOgImageAsync(title, date);
+    return Results.Bytes(imageBytes, "image/png");
 });
 
 app.MapGet("/api/stats/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids) =>

@@ -10,7 +10,6 @@ namespace smallurl.Services
     {
         private readonly ApplicationDbContext _db;
         private readonly IHashids _hashids;
-        private readonly string _contributorId = "wt.mc_id=studentamb_425455";
         
         private readonly List<string> _msDomains = new()
         {
@@ -98,6 +97,13 @@ namespace smallurl.Services
             // Add or overwrite the contributor ID
             query["wt.mc_id"] = "studentamb_425455";
             uriBuilder.Query = query.ToString();
+
+            // Remove default ports for a cleaner URL
+            if ((uriBuilder.Scheme == "https" && uriBuilder.Port == 443) || 
+                (uriBuilder.Scheme == "http" && uriBuilder.Port == 80))
+            {
+                uriBuilder.Port = -1;
+            }
 
             return uriBuilder.ToString();
         }
