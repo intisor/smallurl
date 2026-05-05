@@ -186,13 +186,16 @@ app.MapGet("/api/stats", async (ApplicationDbContext db, IHashids hashids) =>
 var apiKey = builder.Configuration["ApiKey"]
     ?? throw new InvalidOperationException("ApiKey not configured");
 
-app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext db, IHashids hashids, HttpContext ctx) =>
+app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext db, IHashids hashids, LinkProcessorService processor, HttpContext ctx) =>
 {
     if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
         return Results.Unauthorized();
 
     if (!Uri.TryCreate(request.Url, UriKind.Absolute, out _))
         return Results.BadRequest(new { error = "Invalid URL" });
+
+    // Apply MS Attribution if applicable
+    var targetUrl = processor.ApplyAttribution(request.Url);
 
     if (!string.IsNullOrWhiteSpace(request.CustomSlug))
     {
@@ -203,7 +206,7 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
 
     var link = new Link
     {
-        OriginalUrl = request.Url,
+        OriginalUrl = targetUrl,
         Label = request.Label ?? request.Url,
         CustomSlug = request.CustomSlug,
         CreatedAt = DateTime.UtcNow
@@ -220,7 +223,7 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
     {
         slug,
         shortUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}/{slug}",
-        originalUrl = link.OriginalUrl,
+        originalUrl = targetUrl,
         label = link.Label,
         createdAt = link.CreatedAt
     });

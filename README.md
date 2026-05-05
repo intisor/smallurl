@@ -284,8 +284,11 @@ GET https://localhost:5001/jR89K
 
 1. Navigate to `/Secret` endpoint
 2. Enter a Microsoft domain URL
-3. The system will append the Student Ambassador contributor ID: `?wt.mc_id=studentamb_425455`
-4. If the URL already contains a `wt.mc_id` parameter, it won't be duplicated
+3. The system will automatically append the Student Ambassador contributor ID: `?wt.mc_id=studentamb_478453`
+4. **Enhanced Logic**:
+   - **Locale Stripping**: Automatically removes language-locale (e.g., `/en-us/`) for cleaner links.
+   - **Plan Exclusion**: Automatically ignores Microsoft Learn Plans (not eligible for attribution).
+   - **Smart Appending**: Correctly handles existing query parameters using `&` instead of `?`.
 5. Copy the appended link
 
 **Supported Domains**:
@@ -302,7 +305,7 @@ GET https://localhost:5001/jR89K
 **Example**:
 ```
 Input:  https://learn.microsoft.com/en-us/dotnet/
-Output: https://learn.microsoft.com/en-us/dotnet/?wt.mc_id=studentamb_425455
+Output: https://learn.microsoft.com/dotnet/?wt.mc_id=studentamb_478453
 ```
 
 ## Project Structure

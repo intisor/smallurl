@@ -91,7 +91,7 @@ namespace smallurl.Controllers
         [HttpPost]
         public IActionResult Secret(SecretPageModel model)
         {
-            const string ContributorId = "?wt.mc_id=studentamb_425455" ;
+            const string ContributorId = "wt.mc_id=studentamb_478453";
            
             if (!string.IsNullOrEmpty(model.MsLink))
             {
@@ -103,7 +103,8 @@ namespace smallurl.Controllers
                     }
                     else
                     {
-                        model.AppendedLink = $"{model.MsLink}{ContributorId}";
+                        string separator = model.MsLink.Contains("?") ? "&" : "?";
+                        model.AppendedLink = $"{model.MsLink}{separator}{ContributorId}";
                     }
                 }
                 else
@@ -120,22 +121,21 @@ namespace smallurl.Controllers
             List<string> domains = new()
             {
                 "azure.microsoft.com",
-                "imaginecup.microsoft.com",
-                "blog.fabric.microsoft.com",
+                "developer.microsoft.com",
+                "dotnet.microsoft.com",
                 "learn.microsoft.com",
                 "code.visualstudio.com",
-                "learn.microsoft.com/copilot",
+                "devblogs.microsoft.com",
+                "imaginecup.microsoft.com",
+                "copilot.microsoft.com",
+                "blog.fabric.microsoft.com",
                 "community.fabric.microsoft.com",
-                "microsoft.com/microsoft-cloud/blog",
-                "microsoft.com/microsoft-fabric",
-                "developer.microsoft.com",
-                "microsoft.com/startups",
-                "dotnet.microsoft.com",
+                "powerbi.microsoft.com",
                 "events.microsoft.com",
-                "foundershub.startups.microsoft.com",
+                "reactor.microsoft.com",
+                "studentambassadors.microsoft.com",
                 "techcommunity.microsoft.com",
-                "mvp.microsoft.com",
-                "reactor.microsoft.com"
+                "community.powerplatform.com"
             };
             foreach (var domain in domains)
             {

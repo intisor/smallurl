@@ -11,24 +11,38 @@ namespace smallurl.Services
         private readonly ApplicationDbContext _db;
         private readonly IHashids _hashids;
         
-        private readonly List<string> _msDomains = new()
+        private readonly string _contributorId = "studentamb_478453";
+
+        private readonly List<string> _eligibleHosts = new()
         {
             "azure.microsoft.com",
-            "imaginecup.microsoft.com",
-            "blog.fabric.microsoft.com",
+            "developer.microsoft.com",
+            "dotnet.microsoft.com",
             "learn.microsoft.com",
             "code.visualstudio.com",
+            "devblogs.microsoft.com",
+            "imaginecup.microsoft.com",
+            "copilot.microsoft.com",
+            "blog.fabric.microsoft.com",
             "community.fabric.microsoft.com",
-            "microsoft.com/microsoft-cloud/blog",
-            "microsoft.com/microsoft-fabric",
-            "developer.microsoft.com",
-            "microsoft.com/startups",
-            "dotnet.microsoft.com",
+            "powerbi.microsoft.com",
             "events.microsoft.com",
-            "foundershub.startups.microsoft.com",
+            "reactor.microsoft.com",
+            "studentambassadors.microsoft.com",
             "techcommunity.microsoft.com",
-            "mvp.microsoft.com",
-            "reactor.microsoft.com"
+            "community.powerplatform.com"
+        };
+
+        private readonly List<string> _eligibleMicrosoftComPaths = new()
+        {
+            "/microsoft-cloud/blog",
+            "/startups",
+            "/microsoft-365/copilot-learning-center",
+            "/microsoft-copilot/for-individuals",
+            "/microsoft-365-copilot",
+            "/microsoft-fabric",
+            "/power-platform",
+            "/insidetrack"
         };
 
         public LinkProcessorService(ApplicationDbContext db, IHashids hashids)
@@ -84,21 +98,54 @@ namespace smallurl.Services
             return _hashids.Encode(newLink.Id);
         }
 
-        private string ApplyAttribution(string url)
+        public string ApplyAttribution(string url)
         {
             if (url.Contains("wt.mc_id=studentamb")) return url;
 
-            bool isMsDomain = _msDomains.Any(d => url.Contains(d));
-            if (!isMsDomain) return url;
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return url;
+
+            var host = uri.Host.ToLower();
+            var path = uri.AbsolutePath;
+            bool isEligible = false;
+
+            // Check if it's an eligible host
+            if (_eligibleHosts.Contains(host))
+            {
+                isEligible = true;
+                
+                // Special check for Learn Plans (not eligible)
+                if (host == "learn.microsoft.com" && path.Contains("/training/plans/"))
+                {
+                    isEligible = false;
+                }
+            }
+            // Check microsoft.com with specific paths
+            else if (host == "microsoft.com" || host == "www.microsoft.com")
+            {
+                if (_eligibleMicrosoftComPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                {
+                    isEligible = true;
+                }
+            }
+
+            if (!isEligible) return url;
 
             var uriBuilder = new UriBuilder(url);
+
+            // 1. Remove language-locale if present (e.g., /en-us/ -> /)
+            // Regex matches /xx-xx/ or /xx-xx at the start of the path
+            var localeRegex = new System.Text.RegularExpressions.Regex(@"^/([a-z]{2}-[a-z]{2})(/|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (localeRegex.IsMatch(uriBuilder.Path))
+            {
+                uriBuilder.Path = localeRegex.Replace(uriBuilder.Path, "/");
+            }
+
+            // 2. Add or overwrite the contributor ID
             var query = System.Web.HttpUtility.ParseQueryString(uriBuilder.Query);
-            
-            // Add or overwrite the contributor ID
-            query["wt.mc_id"] = "studentamb_425455";
+            query["wt.mc_id"] = _contributorId;
             uriBuilder.Query = query.ToString();
 
-            // Remove default ports for a cleaner URL
+            // 3. Clean up default ports
             if ((uriBuilder.Scheme == "https" && uriBuilder.Port == 443) || 
                 (uriBuilder.Scheme == "http" && uriBuilder.Port == 80))
             {
