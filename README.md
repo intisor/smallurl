@@ -44,6 +44,31 @@ A modern, feature-rich URL shortening service built with ASP.NET Core 8.0 and My
 - Instant shortened URL generation with copy functionality
 - Error handling and user feedback
 
+## 🔍 Concept Discovery Service
+
+SmallURL now includes a **Discovery & Attribution Engine** to help find relevant Microsoft content and automatically apply MLSA tracking.
+
+### Features
+- **Aggregated Search**: Queries Microsoft Learn API and Local History in parallel.
+- **Auto-Attribution**: Every result is processed through the `LinkProcessorService` to strip locales and append `studentamb_478453`.
+- **Duplicate Detection**: Automatically identifies if a search result has already been shortened.
+- **Glassmorphic UI**: A premium discovery dashboard located at `/discovery.html`.
+
+### API Endpoints
+- `GET /api/search?q={query}`: Returns attributed results from across the Microsoft ecosystem.
+- `X-Api-Key` header is required for all discovery requests.
+
+## 🛠️ Technology Stack
+- **Backend**: ASP.NET Core 8.0, Entity Framework Core, SQLite
+- **Attribution Logic**: Custom Regex-based Link Processor
+- **Discovery**: Integrated Microsoft Learn Search API + Local History
+- **Frontend**: Vanilla HTML5/CSS3 (Glassmorphism), JavaScript (Fetch API)
+
+---
+
+> [!TIP]
+> Use the `/discovery.html` page to quickly find content for your technical blogs. It ensures all links are correctly attributed and locales are stripped for a cleaner look.
+
 ## Technology Stack
 
 ### Backend

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmallURL | Concept Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00dc82;
+            --primary-dark: #00bb6e;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 220, 130, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #00dc82, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            padding-right: 4rem;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            color: white;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 220, 130, 0.2);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            border: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .search-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .config-box {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .api-key-input {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            width: 300px;
+            border-radius: 0.5rem;
+        }
+
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.4s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .source-logo {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .source-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--primary);
+            background: rgba(0, 220, 130, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.4rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1rem;
+            border-radius: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-muted);
+        }
+
+        .short-url-tag {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+
+        .loader {
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--glass-border);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: var(--bg);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Concept Discovery</h1>
+            <p class="subtitle">Find and attribute Microsoft content in seconds</p>
+        </header>
+
+        <div class="config-box">
+            <input type="password" id="apiKey" class="api-key-input" placeholder="Enter API Key to enable search...">
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search for concepts (e.g. Copilot, Azure Free, PowerBI)...">
+            <button id="searchBtn" class="search-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+        </div>
+
+        <div id="resultsList" class="results">
+            <!-- Results will be injected here -->
+            <div class="no-results">Type something to start discovering...</div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Link copied to clipboard!</div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsList = document.getElementById('resultsList');
+        const apiKeyInput = document.getElementById('apiKey');
+        const toast = document.getElementById('toast');
+
+        // Load API key from local storage
+        if (localStorage.getItem('smallurl_key')) {
+            apiKeyInput.value = localStorage.getItem('smallurl_key');
+        }
+
+        apiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('smallurl_key', apiKeyInput.value);
+        });
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            const key = apiKeyInput.value.trim();
+
+            if (!query) return;
+            if (!key) {
+                alert('Please enter your API key first.');
+                return;
+            }
+
+            resultsList.innerHTML = '<div class="loading"><div class="loader"></div><p style="margin-top: 1rem">Scanning Microsoft ecosystem...</p></div>';
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+                    headers: { 'X-Api-Key': key }
+                });
+
+                if (response.status === 401) {
+                    resultsList.innerHTML = '<div class="no-results" style="color: #ef4444">Unauthorized: Invalid API Key</div>';
+                    return;
+                }
+
+                const results = await response.json();
+                renderResults(results);
+            } catch (error) {
+                resultsList.innerHTML = '<div class="no-results" style="color: #ef4444">Error connecting to discovery service</div>';
+            }
+        }
+
+        function renderResults(results) {
+            if (!results || results.length === 0) {
+                resultsList.innerHTML = '<div class="no-results">No concepts found for this query.</div>';
+                return;
+            }
+
+            resultsList.innerHTML = results.map((res, index) => `
+                <div class="result-card" style="animation-delay: ${index * 0.05}s">
+                    <div class="card-header">
+                        <img src="${res.logoUrl || 'https://www.microsoft.com/favicon.ico'}" class="source-logo" onerror="this.src='https://www.microsoft.com/favicon.ico'">
+                        <span class="source-badge">${res.source}</span>
+                        ${res.tags.map(tag => `<span class="source-badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">${tag}</span>`).join('')}
+                    </div>
+                    <span class="card-title">${res.title}</span>
+                    <p class="card-desc">${res.description}</p>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="copyToClipboard('${res.attributedUrl}')">
+                            Copy Attributed Link
+                        </button>
+                        ${res.shortUrl ? `
+                            <button class="btn btn-outline" onclick="copyToClipboard('${res.shortUrl}')">
+                                Copy Short Link
+                            </button>
+                            <span class="short-url-tag">${res.shortUrl.replace(/^https?:\/\//, '')}</span>
+                        ` : `
+                            <button class="btn btn-outline" onclick="shortenLink('${res.attributedUrl}', '${res.title.replace(/'/g, "\\'")}', this)">
+                                Create Short Link
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function shortenLink(url, title, btn) {
+            const key = apiKeyInput.value.trim();
+            btn.disabled = true;
+            btn.innerText = 'Creating...';
+
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Api-Key': key
+                    },
+                    body: JSON.stringify({ url, label: title })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showToast('Short link created!');
+                    performSearch(); // Refresh to show the new short link
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = 'Error Creating';
+                }
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerText = 'Error';
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast();
+            });
+        }
+
+        function showToast(message = 'Copied to clipboard!') {
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+    </script>
+</body>
+</html>

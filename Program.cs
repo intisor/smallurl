@@ -23,8 +23,10 @@ builder.Services.AddSingleton<IHashids>(_ =>
         minHashLength: 5
     ));
 
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<LinkProcessorService>();
 builder.Services.AddScoped<OgImageService>();
+builder.Services.AddScoped<SearchService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
@@ -228,6 +230,28 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
         label = link.Label,
         createdAt = link.CreatedAt
     });
+});
+
+app.MapGet("/api/search", async (string q, SearchService searchService, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    if (string.IsNullOrWhiteSpace(q))
+        return Results.BadRequest(new { error = "Query is required" });
+
+    var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+    var results = await searchService.DiscoverAsync(q, baseUrl);
+
+    foreach (var res in results)
+    {
+        if (!string.IsNullOrEmpty(res.ShortUrl) && !res.ShortUrl.StartsWith("http"))
+        {
+            res.ShortUrl = $"{baseUrl}/{res.ShortUrl}";
+        }
+    }
+
+    return Results.Ok(results);
 });
 
 app.MapPost("/api/process-blog", async (ProcessBlogRequest request, LinkProcessorService processor, HttpContext ctx) =>

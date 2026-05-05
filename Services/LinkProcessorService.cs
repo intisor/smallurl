@@ -30,7 +30,13 @@ namespace smallurl.Services
             "reactor.microsoft.com",
             "studentambassadors.microsoft.com",
             "techcommunity.microsoft.com",
-            "community.powerplatform.com"
+            "community.powerplatform.com",
+            "visualstudio.microsoft.com",
+            "azure.com",
+            "office.com",
+            "microsoft365.com",
+            "social.technet.microsoft.com",
+            "social.msdn.microsoft.com"
         };
 
         private readonly List<string> _eligibleMicrosoftComPaths = new()
@@ -42,7 +48,12 @@ namespace smallurl.Services
             "/microsoft-365-copilot",
             "/microsoft-fabric",
             "/power-platform",
-            "/insidetrack"
+            "/power-automate",
+            "/power-apps",
+            "/power-bi",
+            "/power-pages",
+            "/insidetrack",
+            "/training"
         };
 
         public LinkProcessorService(ApplicationDbContext db, IHashids hashids)
