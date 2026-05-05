@@ -43,6 +43,7 @@ var app = builder.Build();
 
 // ── Middleware
 app.UseCors("Portfolio");
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 // ── DB init
