@@ -52,15 +52,11 @@ namespace smallurl.Services
                 if (string.IsNullOrWhiteSpace(originalUrl) || originalUrl.StartsWith("#") || originalUrl.StartsWith("/"))
                     continue;
 
-                // 1. Apply MLSA Attribution if applicable
+                // 1. Apply MLSA Attribution if applicable (keeps the link long)
                 var attributedUrl = ApplyAttribution(originalUrl);
 
-                // 2. Shorten the URL
-                var shortCode = await GetOrCreateShortCodeAsync(attributedUrl);
-                var shortUrl = $"{baseUrl.TrimEnd('/')}/{shortCode}";
-
-                // 3. Update the link in the content
-                link.SetAttributeValue("href", shortUrl);
+                // 2. Update the link in the content with the attributed URL
+                link.SetAttributeValue("href", attributedUrl);
             }
 
             return doc.DocumentNode.OuterHtml;
