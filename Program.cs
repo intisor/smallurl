@@ -3,13 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using smallurl.Data;
 using smallurl.Models;
 using smallurl.Services;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Ensure persistent directory exists BEFORE any DB operations
-var dbDir = "/home/data";
-if (!Directory.Exists(dbDir))
-    Directory.CreateDirectory(dbDir);
+// ── Ensure database directory exists (if specified as a path)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=smallurl.db";
+if (connectionString.Contains("/") || connectionString.Contains("\\"))
+{
+    var dataSource = connectionString.Split('=').Last().Trim();
+    var dir = Path.GetDirectoryName(dataSource);
+    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        Directory.CreateDirectory(dir);
+}
 
 // ── Services
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -87,7 +93,7 @@ app.MapGet("/", () => Results.Ok(new
     timestamp = DateTime.UtcNow
 }));
 
-app.MapGet("/{slug}", async (string slug, ApplicationDbContext db, IHashids hashids) =>
+app.MapGet("/{slug:regex(^[a-zA-Z0-9_-]+$)}", async (string slug, ApplicationDbContext db, IHashids hashids) =>
 {
     if (string.IsNullOrWhiteSpace(slug))
         return Results.NotFound();
@@ -251,7 +257,7 @@ app.MapGet("/api/search", async (string q, SearchService searchService, HttpCont
         }
     }
 
-    return Results.Ok(results);
+    return Results.Json(results, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 });
 
 app.MapPost("/api/process-blog", async (ProcessBlogRequest request, LinkProcessorService processor, HttpContext ctx) =>

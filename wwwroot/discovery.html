@@ -328,10 +328,14 @@
 
             if (!query) return;
             if (!key) {
-                alert('Please enter your API key first.');
+                apiKeyInput.focus();
+                apiKeyInput.style.borderColor = "#ef4444";
+                setTimeout(() => apiKeyInput.style.borderColor = "", 2000);
                 return;
             }
 
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<div class="loader" style="width: 15px; height: 15px; border-width: 2px;"></div>';
             resultsList.innerHTML = '<div class="loading"><div class="loader"></div><p style="margin-top: 1rem">Scanning Microsoft ecosystem...</p></div>';
 
             try {
@@ -348,6 +352,9 @@
                 renderResults(results);
             } catch (error) {
                 resultsList.innerHTML = '<div class="no-results" style="color: #ef4444">Error connecting to discovery service</div>';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
             }
         }
 
@@ -362,7 +369,7 @@
                     <div class="card-header">
                         <img src="${res.logoUrl || 'https://www.microsoft.com/favicon.ico'}" class="source-logo" onerror="this.src='https://www.microsoft.com/favicon.ico'">
                         <span class="source-badge">${res.source}</span>
-                        ${res.tags.map(tag => `<span class="source-badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">${tag}</span>`).join('')}
+                        ${(res.tags || []).map(tag => `<span class="source-badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">${tag}</span>`).join('')}
                     </div>
                     <span class="card-title">${res.title}</span>
                     <p class="card-desc">${res.description}</p>

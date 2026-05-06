@@ -40,12 +40,10 @@ namespace smallurl.Services
                 return cachedResults;
             }
 
-            var localTask = SearchLocalAsync(query, baseUrl);
-            var learnTask = SearchMicrosoftLearnAsync(query);
+            var localResults = await SearchLocalAsync(query, baseUrl);
+            var learnResults = await SearchMicrosoftLearnAsync(query);
 
-            await Task.WhenAll(localTask, learnTask);
-
-            var results = localTask.Result.Concat(learnTask.Result)
+            var results = localResults.Concat(learnResults)
                 .GroupBy(r => r.AttributedUrl.ToLower().TrimEnd('/'))
                 .Select(g => 
                 {
