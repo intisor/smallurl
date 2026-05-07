@@ -75,6 +75,23 @@ using (var scope = app.Services.CreateScope())
         cmd.ExecuteNonQuery();
         cmd.CommandText = "PRAGMA foreign_keys = ON;";
         cmd.ExecuteNonQuery();
+
+        // Self-healing migration: Add SourceBlogUrl if it doesn't exist
+        cmd.CommandText = "PRAGMA table_info(Concepts);";
+        var hasSourceColumn = false;
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                if (reader["name"].ToString() == "SourceBlogUrl") hasSourceColumn = true;
+            }
+        }
+
+        if (!hasSourceColumn)
+        {
+            cmd.CommandText = "ALTER TABLE Concepts ADD COLUMN SourceBlogUrl TEXT;";
+            cmd.ExecuteNonQuery();
+        }
     }
     finally
     {
