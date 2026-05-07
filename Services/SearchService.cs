@@ -12,7 +12,7 @@ namespace smallurl.Services
     public class SearchService
     {
         private readonly HttpClient _httpClient;
-        private readonly LinkProcessorService _linkProcessor;
+        private readonly AttributionService _attributionService;
         private readonly ApplicationDbContext _db;
         private readonly IHashids _hashids;
         private readonly IMemoryCache _cache;
@@ -20,13 +20,13 @@ namespace smallurl.Services
 
         public SearchService(
             HttpClient httpClient, 
-            LinkProcessorService linkProcessor,
+            AttributionService attributionService,
             ApplicationDbContext db,
             IHashids hashids,
             IMemoryCache cache)
         {
             _httpClient = httpClient;
-            _linkProcessor = linkProcessor;
+            _attributionService = attributionService;
             _db = db;
             _hashids = hashids;
             _cache = cache;
@@ -117,7 +117,7 @@ namespace smallurl.Services
                 var results = new List<DiscoveryResult>();
                 foreach (var r in data.Results)
                 {
-                    var attributedUrl = _linkProcessor.ApplyAttribution(r.Url);
+                    var attributedUrl = _attributionService.ApplyAttribution(r.Url);
                     
                     var existing = await _db.Links.FirstOrDefaultAsync(l => l.OriginalUrl == attributedUrl);
                     string? existingShortUrl = null;

@@ -17,4 +17,13 @@ namespace smallurl.Models
         public DateTime ClickedAt { get; set; }
         public Link Link { get; set; } = null!;
     }
+
+    public class Concept
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string ResolvedUrl { get; set; } = string.Empty;
+        public double Confidence { get; set; }
+        public DateTime LastUpdated { get; set; }
+    }
 }

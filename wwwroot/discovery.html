@@ -33,7 +33,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2rem;
+            padding: 8rem 2rem 2rem; /* Adjusted top padding to avoid content hiding behind the fixed header */
         }
 
         .container {
@@ -43,15 +43,24 @@
         }
 
         header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             text-align: center;
-            margin-bottom: 3rem;
+            padding: 1rem 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 1000;
         }
 
         h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 3rem;
+            font-size: 2.2rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.2rem;
             background: linear-gradient(to right, #00dc82, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -59,7 +68,7 @@
 
         .subtitle {
             color: var(--text-muted);
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .search-box {

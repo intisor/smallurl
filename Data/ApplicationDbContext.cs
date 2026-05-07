@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using System.Threading;
 using smallurl.Models;
@@ -15,6 +15,7 @@ namespace smallurl.Data
         public DbSet<Link> Links => Set<Link>();
         public DbSet<Click> Clicks => Set<Click>();
         public DbSet<UrlMapping> UrlMappings => Set<UrlMapping>();
+        public DbSet<Concept> Concepts => Set<Concept>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +42,14 @@ namespace smallurl.Data
                 e.HasKey(u => u.Id);
                 e.Property(u => u.Id).ValueGeneratedOnAdd();
                 e.Property(u => u.OriginalUrl).IsRequired();
+            });
+
+            modelBuilder.Entity<Concept>(e =>
+            {
+                e.HasKey(c => c.Id);
+                e.Property(c => c.Id).ValueGeneratedOnAdd();
+                e.Property(c => c.Name).IsRequired();
+                e.HasIndex(c => c.Name).IsUnique();
             });
         }
 

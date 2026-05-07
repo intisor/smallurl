@@ -30,6 +30,7 @@ builder.Services.AddSingleton<IHashids>(_ =>
     ));
 
 builder.Services.AddMemoryCache();
+builder.Services.AddScoped<AttributionService>();
 builder.Services.AddScoped<LinkProcessorService>();
 builder.Services.AddScoped<OgImageService>();
 builder.Services.AddScoped<SearchService>();
@@ -195,7 +196,7 @@ app.MapGet("/api/stats", async (ApplicationDbContext db, IHashids hashids) =>
 var apiKey = builder.Configuration["ApiKey"]
     ?? throw new InvalidOperationException("ApiKey not configured");
 
-app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext db, IHashids hashids, LinkProcessorService processor, HttpContext ctx) =>
+app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext db, IHashids hashids, AttributionService attribution, HttpContext ctx) =>
 {
     if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
         return Results.Unauthorized();
@@ -204,7 +205,7 @@ app.MapPost("/api/shorten", async (ShortenRequest request, ApplicationDbContext 
         return Results.BadRequest(new { error = "Invalid URL" });
 
     // Apply MS Attribution if applicable
-    var targetUrl = processor.ApplyAttribution(request.Url);
+    var targetUrl = attribution.ApplyAttribution(request.Url);
 
     if (!string.IsNullOrWhiteSpace(request.CustomSlug))
     {
@@ -303,6 +304,65 @@ app.MapDelete("/api/links/{slug}", async (string slug, ApplicationDbContext db, 
     if (link is null) return Results.NotFound();
 
     db.Links.Remove(link);
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
+});
+
+// ── CONCEPT REGISTRY MANAGEMENT ──
+
+app.MapGet("/api/concepts", async (ApplicationDbContext db, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    var concepts = await db.Concepts
+        .OrderByDescending(c => c.Confidence)
+        .ThenBy(c => c.Name)
+        .ToListAsync();
+
+    return Results.Ok(concepts);
+});
+
+app.MapPost("/api/concepts/{id}/approve", async (int id, ApplicationDbContext db, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    var concept = await db.Concepts.FindAsync(id);
+    if (concept is null) return Results.NotFound();
+
+    concept.Confidence = 1.0;
+    concept.LastUpdated = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(concept);
+});
+
+app.MapPost("/api/concepts/{id}/reject", async (int id, ApplicationDbContext db, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    var concept = await db.Concepts.FindAsync(id);
+    if (concept is null) return Results.NotFound();
+
+    concept.Confidence = 0.0; // Blacklisted
+    concept.LastUpdated = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(concept);
+});
+
+app.MapDelete("/api/concepts/{id}", async (int id, ApplicationDbContext db, HttpContext ctx) =>
+{
+    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var key) || key != apiKey)
+        return Results.Unauthorized();
+
+    var concept = await db.Concepts.FindAsync(id);
+    if (concept is null) return Results.NotFound();
+
+    db.Concepts.Remove(concept);
     await db.SaveChangesAsync();
 
     return Results.NoContent();
