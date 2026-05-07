@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmallURL | Concept Registry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00dc82;
+            --primary-dark: #00bb6e;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 220, 130, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 8rem 2rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            z-index: 1;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 1.5rem 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #00dc82, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 1rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .concept-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .concept-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 1.5rem;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .concept-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .confidence-badge {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.3rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .source-link {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .source-link:hover {
+            color: #38bdf8;
+            text-decoration: underline;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            transition: all 0.2s;
+            background: transparent;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: rgba(0, 220, 130, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-reject:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .verified-icon { color: var(--primary); }
+        .pending-icon { color: var(--warning); }
+        .blacklisted-icon { color: var(--danger); }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--glass-border);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+
+        .config-box {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        input {
+            padding: 0.6rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.5rem;
+            color: white;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="discovery.html" class="nav-link">Search Discovery</a>
+        <h1>Concept Registry</h1>
+        <a href="#" class="nav-link active">Registry Manager</a>
+    </header>
+
+    <div class="container">
+        <div class="config-box">
+            <input type="password" id="apiKey" placeholder="Enter API Key to manage...">
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card">
+                <span class="stat-val" id="totalCount">-</span>
+                <span class="stat-label">Total Concepts</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="pendingCount">-</span>
+                <span class="stat-label">Pending Review</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="verifiedCount">-</span>
+                <span class="stat-label">Verified</span>
+            </div>
+        </div>
+
+        <div id="conceptList" class="concept-list">
+            <div class="empty-state">Loading registry...</div>
+        </div>
+    </div>
+
+    <script>
+        const conceptList = document.getElementById('conceptList');
+        const apiKeyInput = document.getElementById('apiKey');
+        const totalCount = document.getElementById('totalCount');
+        const pendingCount = document.getElementById('pendingCount');
+        const verifiedCount = document.getElementById('verifiedCount');
+
+        if (localStorage.getItem('smallurl_key')) {
+            apiKeyInput.value = localStorage.getItem('smallurl_key');
+        }
+
+        apiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('smallurl_key', apiKeyInput.value);
+            loadConcepts();
+        });
+
+        async function loadConcepts() {
+            const key = apiKeyInput.value.trim();
+            if (!key) {
+                conceptList.innerHTML = '<div class="empty-state">Enter API Key to view concepts</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/concepts', {
+                    headers: { 'X-Api-Key': key }
+                });
+
+                if (response.status === 401) {
+                    conceptList.innerHTML = '<div class="empty-state" style="color: var(--danger)">Unauthorized: Invalid API Key</div>';
+                    return;
+                }
+
+                const concepts = await response.json();
+                renderConcepts(concepts);
+            } catch (error) {
+                conceptList.innerHTML = '<div class="empty-state">Error loading registry</div>';
+            }
+        }
+
+        function renderConcepts(concepts) {
+            if (!concepts || concepts.length === 0) {
+                conceptList.innerHTML = '<div class="empty-state">No concepts discovered yet.</div>';
+                return;
+            }
+
+            const pending = concepts.filter(c => c.confidence >= 0.5 && c.confidence < 0.9).length;
+            const verified = concepts.filter(c => c.confidence >= 0.9).length;
+
+            totalCount.innerText = concepts.length;
+            pendingCount.innerText = pending;
+            verifiedCount.innerText = verified;
+
+            conceptList.innerHTML = concepts.map(c => {
+                let statusIcon = '●';
+                let statusClass = 'pending-icon';
+                if (c.confidence >= 0.9) { statusClass = 'verified-icon'; }
+                if (c.confidence < 0.5) { statusClass = 'blacklisted-icon'; }
+
+                return `
+                    <div class="concept-card">
+                        <div class="concept-info">
+                            <h3>
+                                <span class="${statusClass}">${statusIcon}</span> 
+                                ${c.name}
+                                <span class="confidence-badge">Score: ${(c.confidence * 100).toFixed(0)}%</span>
+                            </h3>
+                            <a href="${c.resolvedUrl}" target="_blank" class="source-link">🔗 ${c.resolvedUrl}</a>
+                            ${c.sourceBlogUrl ? `<a href="${c.sourceBlogUrl}" target="_blank" class="source-link">📄 Found in: ${c.sourceBlogUrl.split('/').pop()}</a>` : ''}
+                        </div>
+                        <div class="actions">
+                            ${c.confidence < 0.9 ? `<button class="btn btn-approve" onclick="updateConcept(${c.id}, 'approve')">Approve</button>` : ''}
+                            ${c.confidence >= 0.5 ? `<button class="btn btn-reject" onclick="updateConcept(${c.id}, 'reject')">Reject</button>` : ''}
+                            <button class="btn btn-delete" onclick="updateConcept(${c.id}, 'delete')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateConcept(id, action) {
+            const key = apiKeyInput.value.trim();
+            const endpoint = `/api/concepts/${id}/${action}`;
+            const method = action === 'delete' ? 'DELETE' : 'POST';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: { 'X-Api-Key': key }
+                });
+
+                if (response.ok) {
+                    loadConcepts();
+                }
+            } catch (error) {
+                console.error('Action failed', error);
+            }
+        }
+
+        loadConcepts();
+    </script>
+</body>
+</html>

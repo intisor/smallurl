@@ -272,7 +272,7 @@ app.MapPost("/api/process-blog", async (ProcessBlogRequest request, LinkProcesso
     var baseUrl = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
     
     // 1. Process all links within the blog content
-    var processedContent = await processor.ProcessBlogContentAsync(request.Content, baseUrl);
+    var processedContent = await processor.ProcessBlogContentAsync(request.Content, baseUrl, request.BlogUrl);
 
     // 2. Generate a master short link for the blog post itself if provided
     string? blogShortUrl = null;

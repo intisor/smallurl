@@ -45,7 +45,7 @@ namespace smallurl.Services
             _searchService = searchService;
         }
 
-        public async Task<string> ProcessBlogContentAsync(string content, string baseUrl)
+        public async Task<string> ProcessBlogContentAsync(string content, string apiBaseUrl, string? blogUrl = null)
         {
             var doc = new HtmlDocument();
             doc.LoadHtml(content);
@@ -66,12 +66,12 @@ namespace smallurl.Services
             }
 
             // 2. Intelligent Auto-Linking for concepts
-            await AutoLinkConceptsAsync(doc, baseUrl);
+            await AutoLinkConceptsAsync(doc, apiBaseUrl, blogUrl);
 
             return doc.DocumentNode.OuterHtml;
         }
 
-        private async Task AutoLinkConceptsAsync(HtmlDocument doc, string baseUrl)
+        private async Task AutoLinkConceptsAsync(HtmlDocument doc, string apiBaseUrl, string? blogUrl)
         {
             var textNodes = doc.DocumentNode.SelectNodes("//text()[not(ancestor::a) and not(ancestor::code) and not(ancestor::pre) and not(ancestor::h1) and not(ancestor::h2) and not(ancestor::h3)]");
             if (textNodes == null) return;
@@ -112,7 +112,7 @@ namespace smallurl.Services
                 await semaphore.WaitAsync();
                 try 
                 {
-                    var link = await ResolveConceptLinkAsync(candidate, baseUrl);
+                    var link = await ResolveConceptLinkAsync(candidate, apiBaseUrl, blogUrl);
                     if (!string.IsNullOrEmpty(link))
                     {
                         resolvedMap.TryAdd(candidate, link);
@@ -184,7 +184,7 @@ namespace smallurl.Services
             }
         }
 
-        private async Task<string?> ResolveConceptLinkAsync(string term, string baseUrl)
+        private async Task<string?> ResolveConceptLinkAsync(string term, string apiBaseUrl, string? blogUrl)
         {
             // 1. Check local cache
             var concept = await _db.Concepts.FirstOrDefaultAsync(c => c.Name.ToLower() == term.ToLower());
@@ -201,7 +201,7 @@ namespace smallurl.Services
             }
 
             // 2. Discover via SearchService
-            var results = await _searchService.DiscoverAsync(term, baseUrl);
+            var results = await _searchService.DiscoverAsync(term, apiBaseUrl);
             var bestMatch = results.FirstOrDefault(r => r.Source == "Microsoft Learn");
 
             if (bestMatch != null)
@@ -221,6 +221,7 @@ namespace smallurl.Services
                         {
                             Name = term,
                             ResolvedUrl = bestMatch.AttributedUrl,
+                            SourceBlogUrl = blogUrl,
                             Confidence = confidence,
                             LastUpdated = DateTime.UtcNow
                         };
@@ -230,6 +231,7 @@ namespace smallurl.Services
                     {
                         concept.ResolvedUrl = bestMatch.AttributedUrl;
                         concept.Confidence = confidence;
+                        concept.SourceBlogUrl = blogUrl;
                         concept.LastUpdated = DateTime.UtcNow;
                     }
 

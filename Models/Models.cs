@@ -23,6 +23,7 @@ namespace smallurl.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string ResolvedUrl { get; set; } = string.Empty;
+        public string? SourceBlogUrl { get; set; }
         public double Confidence { get; set; }
         public DateTime LastUpdated { get; set; }
     }
